@@ -1,0 +1,29 @@
+---
+- name: Ubuntu换源
+  hosts: all
+  become: yes
+  vars:
+    mirror: mirror.sysu.edu.cn
+
+  tasks:
+    - name: 01 判断系统版本，决定目标文件
+      set_fact:
+        apt_source_file: >-
+          {{ '/etc/apt/sources.list.d/ubuntu.sources'
+             if ansible_distribution_major_version|int >= 22
+             else '/etc/apt/sources.list' }}
+
+    - name: 02 备份原文件
+      copy:
+        src: "{{ apt_source_file }}"
+        dest: "{{ apt_source_file }}.bak"
+        remote_src: yes
+
+    - name: 03 替换官方域名为镜像站
+      shell: |
+        sed -Ei 's|http://[^/]+\.ubuntu\.com|http://{{ mirror }}|g' {{ apt_source_file }}
+      changed_when: false
+
+    - name: 04 更新 apt 缓存
+      apt:
+        update_cache: yes

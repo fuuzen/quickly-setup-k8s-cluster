@@ -1,0 +1,65 @@
+---
+- name: 安装mihomo并注册到systemd
+  hosts: all
+  become: yes
+  vars:
+    download_url: https://github.com/MetaCubeX/mihomo/releases/download/v1.19.16/mihomo-linux-amd64-compatible-v1.19.16.gz
+
+  tasks:
+    - name: 01 下载 mihomo 二进制
+      ansible.builtin.get_url:
+        url: "{{ download_url }}"
+        dest: /usr/local/sbin/mihomo.gz
+        mode: '0644'
+        timeout: 30
+
+    - name: 02 解压并安装到 /usr/local/sbin/mihomo
+      ansible.builtin.shell: |
+        gunzip /usr/local/sbin/mihomo
+        chmod +x /usr/local/sbin/mihomo
+      changed_when: true
+
+    - name: 03 创建 /etc/mihomo 目录
+      ansible.builtin.file:
+        path: /etc/mihomo
+        state: directory
+        mode: '0755'
+
+    - name: 04 下发 mihomo 配置文件
+      ansible.builtin.template:
+        src: config.yaml
+        dest: /etc/mihomo/config.yaml
+        mode: '0644'
+        backup: yes
+
+    - name: 05 下发 Proxy Provider 配置文件
+      ansible.builtin.template:
+        src: provider.yaml
+        dest: /etc/mihomo/provider.yaml
+        mode: '0644'
+        backup: yes
+
+    - name: 06 下发 systemd 单元文件
+      ansible.builtin.template:
+        src: mihomo.service
+        dest: /etc/systemd/system/mihomo.service
+        mode: '0644'
+      notify:
+        - reload systemd
+        - restart mihomo
+
+    - name: 07 开机自启并立即启动
+      ansible.builtin.systemd:
+        name: mihomo
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+  handlers:
+    - name: reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: yes
+    - name: restart mihomo
+      ansible.builtin.service:
+        name: mihomo
+        state: restarted
