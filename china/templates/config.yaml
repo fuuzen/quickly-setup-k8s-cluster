@@ -70,9 +70,21 @@ tun:
   stack: system
   auto-route: true
   auto-detect-interface: true
-  dns-hijack:
-    - any:53
-    - tcp://any:53
+  # 不代理任何内网流量
+  inet4-route-exclude-address:
+    - 127.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - 10.0.0.0/8
+    - 17.0.0.0/8
+    - 100.64.0.0/10
+    - 224.0.0.0/4
+  inet6-route-exclude-address:
+    - fe80::/10
+  # 不劫持 DNS 避免影响 k8s CoreDNS
+  # dns-hijack:
+  #   - any:53
+  #   - tcp://any:53
 
 #------------------------DNS 配置------------------------#
 dns:
@@ -524,18 +536,6 @@ rules:
   - RULE-SET,reject,🛑 广告拦截,no-resolve
   - RULE-SET,privacy,🛡️ 隐私防护,no-resolve
   - RULE-SET,reject-extra,🆎 AdBlock,no-resolve
-
-  # 本地局域网
-  - DOMAIN-SUFFIX,local,DIRECT
-  - DOMAIN-SUFFIX,localhost,DIRECT
-  - IP-CIDR,127.0.0.0/8,DIRECT
-  - IP-CIDR,172.16.0.0/12,DIRECT
-  - IP-CIDR,192.168.0.0/16,DIRECT
-  - IP-CIDR,10.0.0.0/8,DIRECT
-  - IP-CIDR,17.0.0.0/8,DIRECT
-  - IP-CIDR,100.64.0.0/10,DIRECT
-  - IP-CIDR,224.0.0.0/4,DIRECT
-  - IP-CIDR6,fe80::/10,DIRECT
 
   # 应用分流
   - RULE-SET,ai-platforms,🤖 AI平台,no-resolve
