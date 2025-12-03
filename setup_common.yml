@@ -4,7 +4,7 @@
   vars:
     docker_key_url: https://download.docker.com/linux/ubuntu/gpg
     docker_repo: "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-    # kube_version: "1.31.0"  # Adjust Kubernetes version as needed
+    kube_version: "v1.33"  # Adjust Kubernetes version as needed
     cri_dockerd_version: "0.3.12.3-0"  # Example version for cri-dockerd, customize as needed
 
   tasks:
@@ -115,13 +115,6 @@
           - conntrack
         state: present
 
-    # - name: Add Kubernetes GPG key and repository
-    #   shell: |
-    #     echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kube_version }}/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-    #     curl -fsSL https://pkgs.k8s.io/core:/stable:/{{ kube_version }}/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-    #   args:
-    #     creates: /etc/apt/sources.list.d/kubernetes.list
-
     - name: Remove existing Kubernetes GPG key if it exists
       file:
         path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
@@ -129,15 +122,19 @@
 
     - name: Add Kubernetes GPG key
       shell: |
-        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/{{ kube_version }}/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
       args:
         creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-
-    - name: Add Kubernetes repository for v1.31
+    
+    - name: Add Kubernetes repository
       shell: |
-        echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+        echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kube_version }}/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
       args:
         creates: /etc/apt/sources.list.d/kubernetes.list
+
+    - name: Unhold Kubernetes packages at installed version
+      shell: |
+        sudo apt-mark unhold kubeadm kubelet kubectl
 
     - name: Install kubeadm, kubelet, kubectl
       apt:
@@ -146,16 +143,7 @@
           - kubeadm
           - kubelet
           - kubectl
-        state: present
-
-    # - name: Hold Kubernetes packages at installed version
-    #   apt:
-    #     name:
-    #       - kubeadm
-    #       - kubelet
-    #       - kubectl
-    #     state: present
-    #     mark: hold
+        state: latest
 
     - name: Hold Kubernetes packages at installed version
       shell: |

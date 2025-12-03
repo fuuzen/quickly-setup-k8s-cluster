@@ -19,10 +19,22 @@ cd ssh
 
 复制 `inventory.yml.example` 创建一份 `inventory.yml`，编辑该文件分配 controller 和 worker。
 
-## 3. 依次执行 playbook
+## 3. 执行 playbook
+
+准备环境、安装依赖：
 
 ```shell
+# 若需要修改 k8s 集群版本可以修改该 playbook 的变量
 ansible-playbook -i inventory.yml setup_common.yml
-ansible-playbook -i inventory.yml setup_controller.yml
-ansible-playbook -i inventory.yml setup_worker.yml
+```
+
+初始化一个新集群：
+
+```shell
+ansible-playbook -i inventory.yml setup_cluster.yml
+```
+
+删除已有的集群：
+```shell
+ansible-playbook -i inventory.yml setup_rm_cluster.yml
 ```
