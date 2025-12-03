@@ -1,0 +1,7 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Remove Existing Kubernetes Cluster
+      shell: |
+        echo 'y' | kubeadm reset --cri-socket /var/run/cri-dockerd.sock
