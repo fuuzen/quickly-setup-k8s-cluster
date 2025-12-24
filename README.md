@@ -38,3 +38,5 @@ ansible-playbook -i inventory.yml setup_cluster.yml
 ```shell
 ansible-playbook -i inventory.yml setup_rm_cluster.yml
 ```
+
+若需要像 k3s/rke2 一样使用简单的本地存储提供 StrageClass，请参考 `./local-path-provisioner/` 目录。
