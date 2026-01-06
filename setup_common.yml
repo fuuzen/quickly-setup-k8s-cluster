@@ -8,9 +8,14 @@
     cri_dockerd_version: "0.3.12.3-0"  # Example version for cri-dockerd, customize as needed
 
   tasks:
-    - name: Remove old Kubernetes repository e.g., v1.29 if it exists
+    - name: Remove old Kubernetes repository if it exists
       file:
         path: /etc/apt/sources.list.d/kubernetes.list
+        state: absent
+
+    - name: Remove old Docker repository if it exists
+      file:
+        path: /etc/apt/sources.list.d/docker.list
         state: absent
 
     - name: Refresh and upgrade packages
@@ -132,9 +137,9 @@
       args:
         creates: /etc/apt/sources.list.d/kubernetes.list
 
-    - name: Unhold Kubernetes packages at installed version
-      shell: |
-        sudo apt-mark unhold kubeadm kubelet kubectl
+    # - name: Unhold Kubernetes packages at installed version
+    #   shell: |
+    #     sudo apt-mark unhold kubeadm kubelet kubectl
 
     - name: Install kubeadm, kubelet, kubectl
       apt:
