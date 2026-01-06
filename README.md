@@ -39,4 +39,10 @@ ansible-playbook -i inventory.yml setup_cluster.yml
 ansible-playbook -i inventory.yml setup_rm_cluster.yml
 ```
 
-若需要像 k3s/rke2 一样使用简单的本地存储提供 StrageClass，请参考 `./local-path-provisioner/` 目录。
+##  4. 自定义插件
+
+创建的集群使用 Flannel 作为 CNI 插件。
+
+若需要 CSI 插件，请参考 `./csi/` 目录。
+
+若需要负载均衡器，请参考 `./metallb/` 目录。
