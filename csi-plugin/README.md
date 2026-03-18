@@ -13,4 +13,10 @@ The default path to create local storage is `/opt/local-path-provisioner`, you c
 ## Other Local Storage Options
 
 - [OpenEBS](https://github.com/openebs/openebs)
+
+  ```shell
+  kubectl apply -f https://openebs.github.io/charts/openebs-operator.yaml
+  kubectl patch storageclass openebs-hostpath -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+  ```
+
 - [Sig-Storage Local **Static** Provisioner](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner)

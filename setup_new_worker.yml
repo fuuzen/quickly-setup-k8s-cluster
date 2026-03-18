@@ -1,0 +1,62 @@
+---
+# Join an existing Kubernetes cluster.
+#
+# This playbook:
+#   1) Runs on the control plane to generate a kubeadm join command + token.
+#   2) Prints the join command for manual copy/paste.
+#   3) Joins any hosts in the `new_workers` group to the cluster.
+
+- hosts: control_node
+  become: true
+  vars:
+    kubeconfig_path: "~{{ k8s_user }}/.kube/config"
+  tasks:
+    - name: Generate a kubeadm join command
+      shell: |
+        kubeadm token create --print-join-command --ttl 24h
+      register: kubeadm_join_command
+
+    - name: Set join command facts for other hosts
+      set_fact:
+        kubeadm_join_command: "{{ kubeadm_join_command.stdout }}"
+        kubeadm_join_token: "{{ (kubeadm_join_command.stdout | regex_search('--token\\s+([\\w.]+)', '\\1')).0 }}"
+        kubeadm_discovery_hash: "{{ (kubeadm_join_command.stdout | regex_search('--discovery-token-ca-cert-hash\\s+sha256:([\\w]+)', '\\1')).0 }}"
+
+    - name: Display the kubeadm join command
+      debug:
+        msg: "{{ kubeadm_join_command }}"
+
+    - name: Resolve control plane hostname to IP
+      command: getent ahosts "{{ hostvars['control_node'].ansible_host }}"
+      register: resolved_ip_output
+
+    - name: Parse resolved control plane IP
+      set_fact:
+        resolved_control_plane_ip: "{{ resolved_ip_output.stdout_lines[0].split(' ')[0] }}"
+
+    - name: Set resolved_control_plane_ip and join facts globally
+      add_host:
+        name: "global"
+        resolved_control_plane_ip: "{{ resolved_control_plane_ip }}"
+        kubeadm_join_command: "{{ kubeadm_join_command }}"
+        kubeadm_join_token: "{{ kubeadm_join_token }}"
+        kubeadm_discovery_hash: "{{ kubeadm_discovery_hash }}"
+
+- hosts: new_workers
+  become: true
+  tasks:
+    - name: Join Kubernetes cluster
+      shell: |
+        kubeadm join {{ hostvars['global'].resolved_control_plane_ip }}:6443 \
+          --token {{ hostvars['global'].kubeadm_join_token }} \
+          --discovery-token-ca-cert-hash sha256:{{ hostvars['global'].kubeadm_discovery_hash }} \
+          --cri-socket unix:///var/run/cri-dockerd.sock --v=5
+      args:
+        creates: /var/lib/kubelet/kubeadm-flags.env
+
+    - name: Ensure ~/.kube directory exists
+      file:
+        path: "~{{ ansible_user }}/.kube"
+        state: directory
+        mode: '0755'
+      become_user: "{{ ansible_user }}"

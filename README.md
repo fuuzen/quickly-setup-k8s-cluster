@@ -35,9 +35,19 @@ ansible-playbook -i inventory.yml setup_cluster.yml
 ```
 
 删除已有的集群：
+
 ```shell
 ansible-playbook -i inventory.yml setup_rm_cluster.yml
 ```
+
+将一个新机器加入集群（作为 worker），先在 `inventory.yml` 中增加 `new_workers` 的节点，然后：
+
+```shell
+ansible-playbook -i inventory.yml setup_common.yml --limit new_workers
+ansible-playbook -i inventory.yml setup_new_worker.yml
+```
+
+注意新的 worker k8s 版本不能高于控制平面！(即使是小版本)
 
 ##  4. 自定义插件
 
