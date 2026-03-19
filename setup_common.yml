@@ -163,8 +163,13 @@
       shell: |
         sudo modprobe overlay
         sudo modprobe br_netfilter
-      args:
-        creates: /etc/modules-load.d/k8s.conf
+
+    - name: Configure auto load of kernel modules on boot
+      copy:
+        content: |
+          overlay
+          br_netfilter
+        dest: /etc/modules-load.d/k8s.conf
 
     - name: Configure sysctl for Kubernetes networking
       copy:
